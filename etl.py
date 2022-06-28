@@ -6,13 +6,11 @@
 """
 import pandas as pd
 import sql
-from DBToolBox.DataConnectors import (
-    insert_db, connect_db, get_alchemy_engine_db
-)
+from DBToolBox.DataConnectors import insert_db
 
 # Extract
 def ingest_raw_data(paths: list) -> list:
-    """ Returns a DataFrame for each of the valid given paths """
+    """Returns a DataFrame for each of the valid given paths"""
     data = []
     for f in paths:
         try:
@@ -22,15 +20,16 @@ def ingest_raw_data(paths: list) -> list:
             print(f"Missing {f}")
             pass
     return data
-    
+
+
 # Transform
 def rename_cols(df: pd.DataFrame, cols: dict) -> pd.DataFrame:
-    """ Takes in a DataFrame and returns a copy with the columns renamed """
+    """Takes in a DataFrame and returns a copy with the columns renamed"""
     return df.rename(columns=cols)
 
 
 def format_dates(df: pd.DataFrame, datecols: list) -> pd.DataFrame:
-    """ 
+    """
     Takes in a DataFrame and returns a copy with the given date columns
     formatted in YYYY-MM-DD format
     """
@@ -39,10 +38,12 @@ def format_dates(df: pd.DataFrame, datecols: list) -> pd.DataFrame:
     return df
 
 
-def remove_duplicates(df: pd.DataFrame, subset: list, keep: str = "last") -> pd.DataFrame:
-    """ 
-    Takes in a DataFrame and returns a copy with duplicates 
-    removed according to the given subset of keys 
+def remove_duplicates(
+    df: pd.DataFrame, subset: list, keep: str = "last"
+) -> pd.DataFrame:
+    """
+    Takes in a DataFrame and returns a copy with duplicates
+    removed according to the given subset of keys
     """
     return df.drop_duplicates(subset=subset, keep=keep)
 
@@ -66,29 +67,29 @@ def clean_data(df: pd.DataFrame, config: dict) -> pd.DataFrame:
 
 def pivot_data(df: pd.DataFrame, config: dict, table: str) -> pd.DataFrame:
     """
-    Returns a pivoted version of the given DataFrame based 
+    Returns a pivoted version of the given DataFrame based
     on supplied configuration for the given table
     """
     return df.pivot_table(
-        index = config[table]["index"],
-        columns = config[table]["pivot-on"],
-        values = config[table]["values"]
+        index=config[table]["index"],
+        columns=config[table]["pivot-on"],
+        values=config[table]["values"],
     )
 
 
 def format_pivot_data(df: pd.DataFrame, config: dict, table: str) -> pd.DataFrame:
-    """ Returns a formatted version of the given pivoted DataFrame based on provided config """
-    df.index.names = ['id']
-    df['anime_id'] = df.index
-    df['load_date'] = config[table]["load-date"]
-    df['load_date'].fillna(method='backfill', inplace=True)
+    """Returns a formatted version of the given pivoted DataFrame based on provided config"""
+    df.index.names = ["id"]
+    df["anime_id"] = df.index
+    df["load_date"] = config[table]["load-date"]
+    df["load_date"].fillna(method="backfill", inplace=True)
     df = df[config[table]["columns"]]
     return df
 
 
-def create_pivot_table(df: pd.DataFrame, config:dict, table: str) -> pd.DataFrame:
-    """ 
-    Takes the given DataFrame and returns a pivoted and formatted version 
+def create_pivot_table(df: pd.DataFrame, config: dict, table: str) -> pd.DataFrame:
+    """
+    Takes the given DataFrame and returns a pivoted and formatted version
     based on the provided configuration
     """
     result = pivot_data(df, config, table)
@@ -96,33 +97,37 @@ def create_pivot_table(df: pd.DataFrame, config:dict, table: str) -> pd.DataFram
     return result
 
 
-def join_data(config: dict, df1: pd.DataFrame, df2: pd.DataFrame, df3: pd.DataFrame) -> pd.DataFrame:
-    """ 
+def join_data(
+    config: dict, df1: pd.DataFrame, df2: pd.DataFrame, df3: pd.DataFrame
+) -> pd.DataFrame:
+    """
     Takes in three DataFrames in a list and returns the inner join of the three datasets.
     The order that @param data comes in matters. It is expected that the DataFrames are
     provided in the order that you intend to join them (e.g. data[0].merge(data[1] -> .merge(data[2]))
     """
-    results = df1.merge(df2, how='inner', on=config["anime-stats-scores"]["primarykey"])
-    results = results.merge(df3, how='inner', on=config["anime-stats-scores"]["primarykey"])
-    results['load_date'] = results['load_date_x']
+    results = df1.merge(df2, how="inner", on=config["anime-stats-scores"]["primarykey"])
+    results = results.merge(
+        df3, how="inner", on=config["anime-stats-scores"]["primarykey"]
+    )
+    results["load_date"] = results["load_date_x"]
     results = results[config["anime-stats-scores"]["columns"]]
     return results
 
 
 # Load
 def execute_sql(conn, queries: list):
-    """ Executes the given queries on the provided connection """
+    """Executes the given queries on the provided connection"""
     for query in queries:
         conn.execute(query)
 
 
 def load_data(data: dict, config: dict, engine):
-    """ Loads data into the database based on the provided config """
+    """Loads data into the database based on the provided config"""
     for df in data:
         insert_db(
-            data[df], 
-            config[df]["tablename"], 
-            config[df]["schema"], 
-            engine=engine, 
-            if_exists="replace"
+            data[df],
+            config[df]["tablename"],
+            config[df]["schema"],
+            engine=engine,
+            if_exists="replace",
         )
