@@ -16,7 +16,7 @@ git+https://github.com/martinmarroyo/DBToolBox.git
 pytest
 pylint
 python-dotenv
-
+pyyaml
 
 
 

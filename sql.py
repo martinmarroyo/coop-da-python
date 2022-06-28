@@ -3,12 +3,12 @@ from datetime import datetime
 today = datetime.now().strftime("%Y-%m-%d")
 
 # Create Schema
-create_schema = """
+CREATE_SCHEMA = """
     DROP SCHEMA IF EXISTS anime CASCADE;
     CREATE SCHEMA IF NOT EXISTS anime;
 """
 # Dim Day
-create_dim_day = """
+CREATE_DIM_DAY = """
     CREATE TABLE IF NOT EXISTS public.dim_day (
         day_key SERIAL,
         _date DATE,
@@ -122,7 +122,7 @@ create_dim_day = """
 """
 
 # Metadata
-add_metadata = """
+ADD_METADATA = """
         -- Anime Stats and Scores Raw
     COMMENT ON TABLE anime.anime_stats_and_scores_raw
         IS '''A listing of all animes with their respective statistics and scores from MyAnimeList. 
@@ -301,7 +301,7 @@ add_metadata = """
 
 
 # Analyzing Columns Statistics
-analyze_column_stats = """
+ANALYZE_COLUMN_STATS = """
     ANALYZE public.dim_day;
     ANALYZE anime.all_anime;
     ANALYZE anime.stats;
