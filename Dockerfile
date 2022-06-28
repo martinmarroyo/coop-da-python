@@ -12,6 +12,8 @@ RUN ssh-keygen -t rsa -f ~/.ssh/git-key -q -N '""'
 # Copy code files
 COPY ../.. /src
 COPY initial_etl.py .
+COPY etl.py .
+COPY tables.yml .
 COPY .env .
 COPY sql.py .
 RUN pip install -r ../requirements.txt
