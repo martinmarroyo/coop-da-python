@@ -73,7 +73,7 @@ def main():
             "anime-stats-scores-raw": anime_stats_and_scores_raw,
             "anime-stats-scores-pct": anime_stats_and_scores_pct,
         }
-        etl.load_data(data, config, engine)
+        etl.load_data_concurrent(config, data, engine)
         # Add metadata and analyze column statistics
         logging.info("Analyzing column statistics and adding definitions...")
         print("Analyzing column statistics and adding definitions... almost done...")

@@ -16,6 +16,8 @@ all-anime:
     - aired_to
   dupe-index:
     - anime_id
+  conversion:
+    airing: {"t": True, "f": False}
 anime-stats:
   schema: anime
   tablename: stats
@@ -60,4 +62,4 @@ anime-stats-scores:
         'rating', 'score', 'favorites',  'airing', 'aired_from', 'aired_to',
         'watching', 'completed', 'on_hold', 'dropped', 'plan_to_watch', 'total',
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-    ]
+  ]

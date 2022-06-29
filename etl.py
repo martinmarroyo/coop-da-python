@@ -4,9 +4,10 @@
 @Description: A collection of functions to perform the ETL process
               for the initial COOP Data Analytics DB Environment
 """
-import pandas as pd
-import sql
+from concurrent.futures import ThreadPoolExecutor
 from DBToolBox.DataConnectors import insert_db
+import pandas as pd
+
 
 # Extract
 def ingest_raw_data(paths: list) -> list:
@@ -18,7 +19,6 @@ def ingest_raw_data(paths: list) -> list:
             data.append(df)
         except:
             print(f"Missing {f}")
-            pass
     return data
 
 
@@ -48,6 +48,16 @@ def remove_duplicates(
     return df.drop_duplicates(subset=subset, keep=keep)
 
 
+def convert_column(df: pd.DataFrame, config: dict) -> pd.DataFrame:
+    """
+    Returns a copy of the DataFrame with columns converted according
+    to the provided configuration file
+    """
+    for col in config:
+        df[col] = df[col].map(config[col])
+    return df
+
+
 def clean_data(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     """
     Returns a DataFrame with duplicates removed and date
@@ -56,6 +66,9 @@ def clean_data(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     # Rename columns
     if "rename" in config:
         df = rename_cols(df, config["rename"])
+    # Convert column datatypes
+    if "conversion" in config:
+        df = convert_column(df, config["conversion"])
     # Format dates
     if "datecols" in config:
         df = format_dates(df, config["datecols"])
@@ -103,7 +116,8 @@ def join_data(
     """
     Takes in three DataFrames in a list and returns the inner join of the three datasets.
     The order that @param data comes in matters. It is expected that the DataFrames are
-    provided in the order that you intend to join them (e.g. data[0].merge(data[1] -> .merge(data[2]))
+    provided in the order that you intend to join them:
+    (e.g. data[0].merge(data[1] -> .merge(data[2]))
     """
     results = df1.merge(df2, how="inner", on=config["anime-stats-scores"]["primarykey"])
     results = results.merge(
@@ -121,8 +135,8 @@ def execute_sql(conn, queries: list):
         conn.execute(query)
 
 
-def load_data(data: dict, config: dict, engine):
-    """Loads data into the database based on the provided config"""
+def load_data_sync(data: dict, config: dict, engine):
+    """Synchronously oads data into the database based on the provided config"""
     for df in data:
         insert_db(
             data[df],
@@ -131,3 +145,18 @@ def load_data(data: dict, config: dict, engine):
             engine=engine,
             if_exists="replace",
         )
+
+
+def load_data_single(data: tuple, engine, config):
+    """Helper function to unpack and load data into database"""
+    # unpack data
+    table, df = data
+    tablename = config[table]["tablename"]
+    schema = config[table]["schema"]
+    insert_db(df, tablename, schema, engine=engine, if_exists="replace")
+
+
+def load_data_concurrent(config: dict, data: list, engine):
+    """Concurrently loads data into the database based on provided config"""
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        executor.map(lambda p: load_data_single(p, engine, config), data.items())
