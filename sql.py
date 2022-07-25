@@ -5,7 +5,9 @@ today = datetime.now().strftime("%Y-%m-%d")
 # Create Schema
 CREATE_SCHEMA = """
     DROP SCHEMA IF EXISTS anime CASCADE;
+    DROP SCHEMA IF EXISTS anime_stage CASCADE;
     CREATE SCHEMA IF NOT EXISTS anime;
+    CREATE SCHEMA IF NOT EXISTS anime_stage;
 """
 # Dim Day
 CREATE_DIM_DAY = """
@@ -244,7 +246,7 @@ ADD_METADATA = """
         IS 'Anime audience rating ("G - All Ages" "PG - Children" "PG-13 - Teens 13 or older" "R - 17+ (violence & profanity)" "R+ - Mild Nudity" "Rx - Hentai")';
 
     COMMENT ON COLUMN anime.all_anime.score
-        IS 'Score';
+        IS 'Average fan rating (out of 10)';
 
     COMMENT ON COLUMN anime.all_anime.favorites
         IS 'Number of users who have favorited this entry';
@@ -309,3 +311,5 @@ ANALYZE_COLUMN_STATS = """
     ANALYZE anime.anime_stats_and_scores_raw;
     ANALYZE anime.anime_stats_and_scores_pct;
 """
+
+ENABLE_CROSSTAB = "CREATE EXTENSION IF NOT EXISTS tablefunc;"

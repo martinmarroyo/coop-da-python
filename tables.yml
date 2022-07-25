@@ -1,65 +1,59 @@
 # Provides metadata necessary for ingesting and transforming our data and loading it to the database
-raw-data-loc:
-  - /src/python-env/data/all_anime.csv
-  - /src/python-env/data/anime_stats.csv
-  - /src/python-env/data/anime_scores.csv
-# Tables 
-all-anime:
-  schema: anime
-  tablename: all_anime
-  rename: 
-    id: anime_id
-    title: anime_title
-  datecols:
-    - load_date
-    - aired_from
-    - aired_to
-  dupe-index:
-    - anime_id
-  conversion:
-    airing: {"t": True, "f": False}
-anime-stats:
-  schema: anime
-  tablename: stats
-  datecols:
-    - load_date
-  dupe-index: 
-    - anime_id
-anime-scores:
-  schema: anime
-  tablename: scores
-  datecols:
-    - load_date
-  dupe-index:
-    - anime_id
-    - score
-anime-votes-raw:
-  schema: anime
-  tablename: anime_votes_raw
-  index: anime_id
-  columns: ['anime_id', 'load_date', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  pivot-on: score
-  values: votes
-  load-date: 2022-06-27
-anime-votes-pct:
-  schema: anime
-  tablename: anime_votes_pct
-  index: anime_id
-  columns: ['anime_id', 'load_date', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  pivot-on: score
-  values: percentage
-  load-date: 2022-06-27
-anime-stats-scores-raw:
-  schema: anime
-  tablename: anime_stats_and_scores_raw
-anime-stats-scores-pct:
-  schema: anime
-  tablename: anime_stats_and_scores_pct
-anime-stats-scores:
-  primarykey: anime_id
-  columns: [
-        'anime_id', 'load_date','anime_title', 'status', 
-        'rating', 'score', 'favorites',  'airing', 'aired_from', 'aired_to',
-        'watching', 'completed', 'on_hold', 'dropped', 'plan_to_watch', 'total',
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-  ]
+data:
+# Staging
+  all-anime:
+    source: /src/python-env/data/all_anime.csv
+    schema: anime_stage
+    tablename: all_anime
+    rename: 
+      id: anime_id
+      title: anime_title
+      score: "avg_score"
+    datecols:
+      - load_date
+      - aired_from
+      - aired_to
+    dupe-index:
+      - anime_id
+    conversion:      
+      airing: boolean
+  stat:
+    source: /src/python-env/data/anime_stats.csv
+    schema: anime_stage
+    tablename: all_stats
+    datecols:
+      - load_date
+    dupe-index: 
+      - anime_id
+  score: 
+    source: /src/python-env/data/anime_scores.csv
+    schema: anime_stage
+    tablename: scores
+    datecols:
+      - load_date
+    dupe-index:
+      - anime_id
+      - score
+# Data Warehouse
+  dim_anime:
+    schema: anime
+    tablename: dim_anime
+    columns: [
+        'anime_key','anime_id', 'anime_title', 'status', 'rating',
+        'airing', 'aired_from', 'aired_to', 'is_current','current_as_of', 
+        'expired'
+    ]
+    date_cols: ["current_as_of", "expired", "aired_from", "aired_to"]
+    conversion: 
+      airing: boolean
+      is_current: boolean
+  fact_anime_stats:
+    schema: anime
+    tablename: fact_anime_stats
+    datcols:
+      - load_date
+  fact_anime_scores:
+    schema: anime
+    tablename: fact_anime_scores
+    date_cols:
+      - load_date
